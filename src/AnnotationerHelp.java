@@ -1,0 +1,24 @@
+import ij.IJ;
+import ij.plugin.PlugIn;
+
+/**
+ * Created by miroslav on 6/4/14.
+ */
+public class AnnotationerHelp implements PlugIn {
+
+	public void run(String s) {
+
+		String instructions = "";
+		instructions += " 'u' \t increase picker circle \n";
+		instructions += " 'j' \t decrease picker circle \n";
+		instructions += " '+' \t zoom in \n";
+		instructions += " '-' \t zoom out \n";
+		instructions += " 'b' \t add bifurcation \n";
+		instructions += " 'e' \t add endpoint \n";
+		instructions += " 'n' \t add nonpoint (negative example - experimental) \n";
+		instructions += " 'd' \t delete detection \n";
+		instructions += " 's' \t save and export annotations \n";
+
+		IJ.showMessage("Help", instructions);
+	}
+}
