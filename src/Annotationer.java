@@ -31,15 +31,24 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 	ImageCanvas canvas;
 	ImageWindow	wind;
 
-
 	String      image_path;
 	String 		image_dir, image_name;
 
-	String 		gndtth_endpoints_path;
-	String 		gndtth_bifurcations_path;
-	String 		gndtth_nonpoints_path;
+	String      gndtth_path;
+	// categories of critical points (indexes are used to differentiate in .swc and colours in overlays)
+	Color		end_color = Color.YELLOW; 		// for overlay
+	int			end_type = 1; 					// for swc
 
-	Overlay ov_annot; 	// overlay with annotations (end, bif, non colored in different colors)
+	Color 		bif_color = Color.RED;
+	int			bif_type = 3;
+
+	Color		cross_color = Color.GREEN;
+	int			cross_type = 4;
+
+	Color		none_color = Color.BLUE;
+	int			none_type = 0;
+
+	Overlay ov_annot; 	// overlay with annotations (end, bif, cross, none colored in different colors)
 
 	float pick_R;        // 'pick' circle
 	float pick_X;
@@ -61,76 +70,61 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 		inimg = new ImagePlus(image_path);
 		if(inimg==null) return;
 
-		pick_R = Math.min(inimg.getWidth(), inimg.getHeight()) / 30f;
+		pick_R = Math.min(inimg.getWidth(), inimg.getHeight()) / 30f; // initial size of the circle
 		pick_X = 0;
 		pick_Y = 0;
 
-		image_dir = inimg.getOriginalFileInfo().directory; //  + File.separator  + image_name
+		image_dir = inimg.getOriginalFileInfo().directory; 	//  + File.separator  + image_name
 		image_name = inimg.getShortTitle();
 
-		gndtth_endpoints_path 		= image_dir + image_name + ".end";
-		gndtth_bifurcations_path 	= image_dir + image_name + ".bif";
-		gndtth_nonpoints_path 		= image_dir + image_name + ".non";
+		gndtth_path 				= image_dir + image_name + "_annotation.swc";
 
 		// look for the annotations and initialize Overlays
 		ov_annot = new Overlay();
 
-		int nr_bifs = 0;
-		int nr_ends = 0;
-		int nr_nons = 0;
+		int nr_bifs 	= 0;
+		int nr_cross 	= 0;
+		int nr_ends 	= 0;
+		int nr_nons 	= 0;
 
-		if ((new File(gndtth_bifurcations_path)).exists()) {
+		if ((new File(gndtth_path)).exists()) { // if it exists - update the overlays first
 
-			ReadSWC reader = new ReadSWC(gndtth_bifurcations_path);
-
-			nr_bifs = reader.nodes.size();
+			ReadSWC reader = new ReadSWC(gndtth_path);
 
 			for (int i=0; i<reader.nodes.size(); i++) {
-				float x = reader.nodes.get(i)[reader.XCOORD];
-				float y = reader.nodes.get(i)[reader.YCOORD];
-				float r = reader.nodes.get(i)[reader.RADIUS];
 
-				OvalRoi c = new OvalRoi(x-r+.5f, y-r+.5f, 2*r, 2*r);
-				c.setFillColor(Color.RED);
-				c.setStrokeColor(Color.RED);
-				ov_annot.add(c);
-			}
+				int   type 	= Math.round(reader.nodes.get(i)[reader.TYPE]);
+				float x 	= reader.nodes.get(i)[reader.XCOORD];
+				float y 	= reader.nodes.get(i)[reader.YCOORD];
+				float r 	= reader.nodes.get(i)[reader.RADIUS];
 
-		}
 
-		if ((new File(gndtth_endpoints_path)).exists()) {
+				/*
+				file -> overlay
+				 */
+				OvalRoi c = new OvalRoi(x-r+.0f, y-r+.0f, 2*r, 2*r);
 
-			ReadSWC reader = new ReadSWC(gndtth_endpoints_path);
+				if (type==0) {
+					c.setFillColor(none_color);
+					c.setStrokeColor(none_color);
+					nr_nons++;
+				}
+				else if (type==1) {
+					c.setFillColor(end_color);
+					c.setStrokeColor(end_color);
+					nr_ends++;
+				}
+				else if (type==3) {
+					c.setFillColor(bif_color);
+					c.setStrokeColor(bif_color);
+					nr_bifs++;
+				}
+				else if (type==4) {
+					c.setFillColor(cross_color);
+					c.setStrokeColor(cross_color);
+					nr_cross++;
+				}
 
-			nr_ends = reader.nodes.size();
-
-			for (int i = 0; i<reader.nodes.size(); i++) {
-				float x = reader.nodes.get(i)[reader.XCOORD];
-				float y = reader.nodes.get(i)[reader.YCOORD];
-				float r = reader.nodes.get(i)[reader.RADIUS];
-
-				OvalRoi c = new OvalRoi(x-r+.5f, y-r+.5f, 2*r, 2*r);
-				c.setFillColor(Color.YELLOW);
-				c.setStrokeColor(Color.YELLOW);
-				ov_annot.add(c);
-			}
-
-		}
-
-		if ((new File(gndtth_nonpoints_path)).exists()) {
-
-			ReadSWC reader = new ReadSWC(gndtth_nonpoints_path);
-
-			nr_nons = reader.nodes.size();
-
-			for (int i = 0; i<reader.nodes.size(); i++) {
-				float x = reader.nodes.get(i)[reader.XCOORD];
-				float y = reader.nodes.get(i)[reader.YCOORD];
-				float r = reader.nodes.get(i)[reader.RADIUS];
-
-				OvalRoi c = new OvalRoi(x-r+.5f, y-r+.5f, 2*r, 2*r);
-				c.setFillColor(Color.BLUE);
-				c.setStrokeColor(Color.BLUE);
 				ov_annot.add(c);
 			}
 
@@ -153,7 +147,7 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 		wind.addKeyListener(this);
 		ImagePlus.addImageListener(this);
 
-		IJ.showStatus("loaded " + nr_bifs + " bifs, " + nr_ends + " ends, " + nr_nons + " nons");
+		IJ.showStatus("loaded " + nr_bifs + " bifs, " + nr_ends + " ends, " + nr_nons + " nons, " + nr_cross + " crosses");
 		IJ.setTool("hand");
 
 	}
@@ -162,7 +156,7 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 
 		// update the pick circle
 
-		OvalRoi circ_to_add = new OvalRoi(pick_X-pick_R+.5f, pick_Y-pick_R+.5f, 2*pick_R, 2*pick_R);
+		OvalRoi circ_to_add = new OvalRoi(pick_X-pick_R+.0f, pick_Y-pick_R+.0f, 2*pick_R, 2*pick_R);
 		if (!begun_picking) {
 			begun_picking = true;
 			ov_annot.add(circ_to_add); // only the first time
@@ -189,8 +183,8 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 			float curr_y = pick_Y;
 			float curr_r = pick_R;
 
-			float ovl_x = (float) (ov_annot.get(i).getFloatBounds().getX() +  ov_annot.get(i).getFloatBounds().getWidth()/2f - .5f);
-			float ovl_y = (float) (ov_annot.get(i).getFloatBounds().getY() + ov_annot.get(i).getFloatBounds().getHeight()/2f - .5f);
+			float ovl_x = (float) (ov_annot.get(i).getFloatBounds().getX() +  ov_annot.get(i).getFloatBounds().getWidth()/2f - .0f);
+			float ovl_y = (float) (ov_annot.get(i).getFloatBounds().getY() + ov_annot.get(i).getFloatBounds().getHeight()/2f - .0f);
 			float ovl_r = (float) (Math.max(ov_annot.get(i).getFloatBounds().getWidth(), ov_annot.get(i).getFloatBounds().getHeight()) / 2f);
 
 			float d2 = (float) (Math.sqrt(Math.pow(curr_x-ovl_x, 2) + Math.pow(curr_y-ovl_y, 2)));
@@ -210,13 +204,32 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 
 	private void addCircle(Color col){
 
-		OvalRoi cc = new OvalRoi(pick_X-pick_R+.5f, pick_Y-pick_R+.5f, 2*pick_R, 2*pick_R);
+		// use pick_X, pick_Y and pick_R to check if it does not overlap
+		for (int i = 0; i < ov_annot.size()-1; i++) { // check all the previous ones
+
+			float x = (float) ov_annot.get(i).getFloatBounds().getX();
+			float y = (float) ov_annot.get(i).getFloatBounds().getY();
+			float w = (float) ov_annot.get(i).getFloatBounds().getWidth();
+			float h = (float) ov_annot.get(i).getFloatBounds().getHeight();
+			float r = (float) (Math.max(w, h)/2);
+
+			x = x+r/2-.0f;
+			y = y+r/2-.0f;
+
+			if ((x-pick_X)*(x-pick_X)+(y-pick_Y)*(y-pick_Y)<=(r+pick_R)*(r+pick_R)) {
+				IJ.showStatus("cannot be added on top of existing");
+				return;
+			}
+
+		}
+
+		OvalRoi cc = new OvalRoi(pick_X-pick_R+.0f, pick_Y-pick_R+.0f, 2*pick_R, 2*pick_R);
 		OvalRoi ccc = cc;
 		cc.setFillColor(col);
 		cc.setStrokeColor(col);
 
 		if (begun_picking) {
-			ov_annot.remove(ov_annot.size()-1);
+			ov_annot.remove(ov_annot.size()-1);   // the last one is always the currently plotted
 			ov_annot.add(cc);
 			ov_annot.add(ccc);
 		}
@@ -228,21 +241,31 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 
 	}
 
-	private void export(){
+	private void export(String gndtth_path_spec){
 
-		PrintWriter logBifWriter=null, logEndWriter=null, logNonWriter=null; // initialize export
+		PrintWriter logAnnotWriter = null;//logBifWriter=null, logEndWriter=null, logNonWriter=null; // initialize export
 
+		// empty the contents first (assume it was loaded first)
+		PrintWriter logWriter = null;
 		try {
-			logBifWriter = new PrintWriter(new BufferedWriter(new FileWriter(gndtth_bifurcations_path, true)));
-			logEndWriter = new PrintWriter(new BufferedWriter(new FileWriter(gndtth_endpoints_path, true)));
-			logNonWriter = new PrintWriter(new BufferedWriter(new FileWriter(gndtth_nonpoints_path, true)));
+			logWriter = new PrintWriter(gndtth_path_spec);
+			logWriter.print("");
+			logWriter.close();
+		} catch (FileNotFoundException ex) {}
+
+		// append
+		try {
+			logAnnotWriter = new PrintWriter(new BufferedWriter(new FileWriter(gndtth_path_spec, true)));
 		} catch (IOException e) {}
 
 		// exports the overlay with annotations to output files in swc format
-		int bif_id = 0;
-		int end_id = 0;
-		int non_id = 0;
+		int id= 0;
+
 		for (int i=0; i<ov_annot.size()-1; i++) {
+
+			/*
+			overlay -> file
+			 */
 
 			float x = (float) ov_annot.get(i).getFloatBounds().getX();
 			float y = (float) ov_annot.get(i).getFloatBounds().getY();
@@ -252,29 +275,26 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 
 			Color get_col = ov_annot.get(i).getFillColor();
 
-			if (get_col==Color.RED) {
-				bif_id++;
-				logBifWriter.println(String.format("%-4d %-4d %-6.2f %-6.2f %-6.2f %-3.2f -1", bif_id, 6, x+r/2-.5f, y+r/2-.5f, 0f,     r));
+			float xc = x+r/1-.0f;
+			float yc = y+r/1-.0f;
+
+			if (get_col==bif_color) {
+				logAnnotWriter.println(String.format("%-4d %-4d %-6.2f %-6.2f %-6.2f %-3.2f -1", id++, 	bif_type, 		xc, yc, 0f,     r));
 			}
-			else if (get_col==Color.YELLOW) {
-				end_id++;
-				logEndWriter.println(String.format("%-4d %-4d %-6.2f %-6.2f %-6.2f %-3.2f -1", end_id, 6, x+r/2-.5f, y+r/2-.5f, 0f,     r));
+			else if (get_col==end_color) {
+				logAnnotWriter.println(String.format("%-4d %-4d %-6.2f %-6.2f %-6.2f %-3.2f -1", id++,	end_type, 		xc, yc, 0f,     r));
 			}
-			else if (get_col==Color.BLUE) {
-				non_id++;
-				logNonWriter.println(String.format("%-4d %-4d %-6.2f %-6.2f %-6.2f %-3.2f -1", non_id, 6, x+r/2-.5f, y+r/2-.5f, 0f,     r));
+			else if (get_col==none_color) {
+				logAnnotWriter.println(String.format("%-4d %-4d %-6.2f %-6.2f %-6.2f %-3.2f -1", id++,	none_type, 		xc, yc, 0f,     r));
+			}
+			else if (get_col==cross_color) {
+				logAnnotWriter.println(String.format("%-4d %-4d %-6.2f %-6.2f %-6.2f %-3.2f -1", id++,	cross_type, 	xc, yc, 0f,     r));
 			}
 
 		}
 
-		logBifWriter.close();
-		logEndWriter.close();
-		logNonWriter.close();
-
-		System.out.println("exporting " + bif_id+ " bifs, " + end_id + " ends, " + non_id + " other");
-		System.out.println(gndtth_bifurcations_path);
-		System.out.println(gndtth_endpoints_path);
-		System.out.println(gndtth_nonpoints_path);
+		logAnnotWriter.close();
+		System.out.println(gndtth_path_spec);
 
 	}
 
@@ -295,7 +315,7 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 		canvas.getImage().updateAndDraw();
 
 		GenericDialog gd = new GenericDialog("CHOOSE...");
-		gd.addChoice("choose ", new String[]{"BIF", "END", "NON"}, "NON");
+		gd.addChoice("choose ", new String[]{"BIF", "CRS", "END", "NON"}, "NON");
 		gd.showDialog();
 
 		if (gd.wasCanceled()) return;
@@ -303,13 +323,16 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 		String aa = gd.getNextChoice();
 
 		if (aa.equals("BIF")) {
-			addCircle(Color.RED);
+			addCircle(bif_color);
 		}
 		if (aa.equals("END")) {
-			addCircle(Color.YELLOW);
+			addCircle(end_color);
 		}
 		if (aa.equals("NON")) {
-			addCircle(Color.BLUE);
+			addCircle(none_color);
+		}
+		if (aa.equals("CRS")) {
+			addCircle(cross_color);
 		}
 
 	}
@@ -320,19 +343,21 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 		if (e.getKeyChar()=='j') pick_R -= 2;
 		if (e.getKeyChar()=='+') canvas.zoomIn((int) pick_X, (int) pick_Y);
 		if (e.getKeyChar()=='-') canvas.zoomOut((int) pick_X, (int) pick_Y);
-		if (e.getKeyChar()=='b') addCircle(Color.RED);
-		if (e.getKeyChar()=='e') addCircle(Color.YELLOW);
-		if (e.getKeyChar()=='n') addCircle(Color.BLUE);
+		if (e.getKeyChar()=='b') addCircle(bif_color);
+		if (e.getKeyChar()=='e') addCircle(end_color);
+		if (e.getKeyChar()=='n') addCircle(none_color);
+		if (e.getKeyChar()=='c') addCircle(cross_color);
 		if (e.getKeyChar()=='d') removeCircle();
 		if (e.getKeyChar()=='s') {
-			GenericDialog gd = new GenericDialog("Wanna save?");
+			GenericDialog gd = new GenericDialog("Save?");
+			gd.addStringField("output path", gndtth_path, gndtth_path.length()+10);
 			gd.showDialog();
 			if (gd.wasCanceled()) return;
-			export();
+			String gndtth_path_spec = gd.getNextString();
+			export(gndtth_path_spec);
 		}
 
 		updateCircle();
-
 
 	}
 
@@ -344,10 +369,12 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 			canvas.removeKeyListener(this);
 		ImagePlus.removeImageListener(this);
 
-		GenericDialog gd = new GenericDialog("Wanna save?");
+		GenericDialog gd = new GenericDialog("Save?");
+		gd.addStringField("output path", gndtth_path, gndtth_path.length()+10);
 		gd.showDialog();
 		if (gd.wasCanceled()) return;
-		export();
+		String gndtth_path_spec = gd.getNextString();
+		export(gndtth_path_spec);
 
 	}
 
