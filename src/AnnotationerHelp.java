@@ -9,12 +9,13 @@ public class AnnotationerHelp implements PlugIn {
 	public void run(String s) {
 
 		String instructions = "";
-		instructions += " 'u' \t increase picker circle \n";
-		instructions += " 'j' \t decrease picker circle \n";
-		instructions += " '+' \t zoom in \n";
-		instructions += " '-' \t zoom out \n";
-		instructions += " 'b' \t add bifurcation \n";
-		instructions += " 'e' \t add endpoint \n";
+		instructions += " 'u'        \t increase picker circle \n";
+		instructions += " 'j'        \t decrease picker circle \n";
+		instructions += " '+'        \t zoom in \n";
+		instructions += " '-'        \t zoom out \n";
+		instructions += " 'b' or '3' \t add bifurcation \n";
+		instructions += " 'e' or '1' \t add endpoint \n";
+		instructions += " 'c' or '4' \t add crosspoint \n";
 		instructions += " 'n' \t add nonpoint (negative example - experimental) \n";
 		instructions += " 'd' \t delete detection \n";
 		instructions += " 's' \t save and export annotations \n";

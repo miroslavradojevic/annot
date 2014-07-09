@@ -339,14 +339,14 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 
 	public void keyTyped(KeyEvent e) {
 
-		if (e.getKeyChar()=='u') pick_R += 2;
-		if (e.getKeyChar()=='j') pick_R -= 2;
+		if (e.getKeyChar()=='u') pick_R += 1;
+		if (e.getKeyChar()=='j') pick_R -= 1;
 		if (e.getKeyChar()=='+') canvas.zoomIn((int) pick_X, (int) pick_Y);
 		if (e.getKeyChar()=='-') canvas.zoomOut((int) pick_X, (int) pick_Y);
-		if (e.getKeyChar()=='b') addCircle(bif_color);
-		if (e.getKeyChar()=='e') addCircle(end_color);
+		if (e.getKeyChar()=='b' || e.getKeyChar()=='3') addCircle(bif_color);
+		if (e.getKeyChar()=='e' || e.getKeyChar()=='1') addCircle(end_color);
 		if (e.getKeyChar()=='n') addCircle(none_color);
-		if (e.getKeyChar()=='c') addCircle(cross_color);
+		if (e.getKeyChar()=='c' || e.getKeyChar()=='4') addCircle(cross_color);
 		if (e.getKeyChar()=='d') removeCircle();
 		if (e.getKeyChar()=='s') {
 			GenericDialog gd = new GenericDialog("Save?");

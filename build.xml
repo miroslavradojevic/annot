@@ -32,7 +32,7 @@ ${env.HOME}/jarlib/                 libraries used
         </jar>
 
         <copy file="./annot_.jar"  toDir="${env.HOME}/ImageJ/plugins/" />
-        <!-- <copy file="./misc_.jar"  toDir="${env.HOME}/Fiji.app/plugins/" /> -->
+        <copy file="./annot_.jar"  toDir="${env.HOME}/Fiji.app/plugins/" />
 
     </target>
 
@@ -73,7 +73,7 @@ ${env.HOME}/jarlib/                 libraries used
             <fileset dir="${build}" includes="**/*"/>
         </delete>
 
-        <javac target="1.5" destdir="${build}" srcdir="${src}" debug="true" debuglevel="lines,vars,source"> <!-- compile with 1.5 ver -->
+        <javac target="1.6" destdir="${build}" srcdir="${src}" debug="true" debuglevel="lines,vars,source"> <!-- compile with 1.5 ver -->
             <classpath refid="classpath"/>
             <src refid="sourcepath"/>
         </javac>
