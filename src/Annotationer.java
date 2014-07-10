@@ -1,19 +1,11 @@
-//import aux.AnalyzeCSV;
-//import aux.ReadSWC;
-//import aux.Tools;
-
 import ij.*;
 import ij.gui.*;
-import ij.io.FileInfo;
 import ij.io.OpenDialog;
 import ij.plugin.PlugIn;
-import ij.plugin.filter.PlugInFilter;
-import ij.process.ImageProcessor;
 
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
-import java.util.ArrayList;
 
 /**
  * Created by miroslav on 6/4/14.
@@ -35,18 +27,23 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 	String 		image_dir, image_name;
 
 	String      gndtth_path;
+
 	// categories of critical points (indexes are used to differentiate in .swc and colours in overlays)
-	Color		end_color = Color.YELLOW; 		// for overlay
-	int			end_type = 1; 					// for swc
+	public static Color		end_color = Color.YELLOW; 		// for overlay
+	public static int			end_type = 1; 					// for swc
 
-	Color 		bif_color = Color.RED;
-	int			bif_type = 3;
+	public static Color 		bif_color = Color.RED;
+	public static int			bif_type = 3;
 
-	Color		cross_color = Color.GREEN;
-	int			cross_type = 4;
+	public static Color		cross_color = Color.GREEN;
+	public static int			cross_type = 4;
 
-	Color		none_color = Color.BLUE;
-	int			none_type = 0;
+	public static Color		none_color = Color.BLUE;
+	public static int			none_type = 0; // last one approved by swc format
+
+	public static
+	Color		ignore_color = new Color(1, 1, 1, 0.5f);
+	public static int			ignore_type = 7;
 
 	Overlay ov_annot; 	// overlay with annotations (end, bif, cross, none colored in different colors)
 
@@ -86,6 +83,7 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 		int nr_cross 	= 0;
 		int nr_ends 	= 0;
 		int nr_nons 	= 0;
+		int nr_ignores = 0;
 
 		if ((new File(gndtth_path)).exists()) { // if it exists - update the overlays first
 
@@ -98,31 +96,35 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 				float y 	= reader.nodes.get(i)[reader.YCOORD];
 				float r 	= reader.nodes.get(i)[reader.RADIUS];
 
-
 				/*
 				file -> overlay
 				 */
 				OvalRoi c = new OvalRoi(x-r+.0f, y-r+.0f, 2*r, 2*r);
 
-				if (type==0) {
+				if (type==none_type) {
 					c.setFillColor(none_color);
 					c.setStrokeColor(none_color);
 					nr_nons++;
 				}
-				else if (type==1) {
+				else if (type==end_type) {
 					c.setFillColor(end_color);
 					c.setStrokeColor(end_color);
 					nr_ends++;
 				}
-				else if (type==3) {
+				else if (type==bif_type) {
 					c.setFillColor(bif_color);
 					c.setStrokeColor(bif_color);
 					nr_bifs++;
 				}
-				else if (type==4) {
+				else if (type==cross_type) {
 					c.setFillColor(cross_color);
 					c.setStrokeColor(cross_color);
 					nr_cross++;
+				}
+				else if (type==ignore_type) {
+					c.setFillColor(ignore_color);
+					c.setStrokeColor(ignore_color);
+					nr_ignores++;
 				}
 
 				ov_annot.add(c);
@@ -147,7 +149,7 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 		wind.addKeyListener(this);
 		ImagePlus.addImageListener(this);
 
-		IJ.showStatus("loaded " + nr_bifs + " bifs, " + nr_ends + " ends, " + nr_nons + " nons, " + nr_cross + " crosses");
+		IJ.showStatus("loaded " + nr_bifs + " bifs, " + nr_ends + " ends, " + nr_nons + " nons, " + nr_cross + " crosses, " + nr_ignores + " ignores");
 		IJ.setTool("hand");
 
 	}
@@ -204,6 +206,8 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 
 	private void addCircle(Color col){
 
+
+
 		// use pick_X, pick_Y and pick_R to check if it does not overlap
 		for (int i = 0; i < ov_annot.size()-1; i++) { // check all the previous ones
 
@@ -213,13 +217,32 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 			float h = (float) ov_annot.get(i).getFloatBounds().getHeight();
 			float r = (float) (Math.max(w, h)/2);
 
-			x = x+r/2-.0f;
-			y = y+r/2-.0f;
+			Color cl = ov_annot.get(i).getFillColor();
 
-			if ((x-pick_X)*(x-pick_X)+(y-pick_Y)*(y-pick_Y)<=(r+pick_R)*(r+pick_R)) {
-				IJ.showStatus("cannot be added on top of existing");
-				return;
+			x = x+r/1-.0f;
+			y = y+r/1-.0f;
+
+			boolean overlap = (x-pick_X)*(x-pick_X)+(y-pick_Y)*(y-pick_Y)<=(r+pick_R)*(r+pick_R);
+
+			// allow only ignores on top of ignores
+			if (col.equals(ignore_color)) {
+
+				if (overlap && !cl.equals(ignore_color)) {
+					IJ.showStatus("ignore cannot be added on top of existing non-ignore");
+					return;
+				}
+
 			}
+			else {
+
+				if (overlap) {
+					IJ.showStatus("non-ignore cannot be added on top of anything");
+					return;
+				}
+
+			}
+
+
 
 		}
 
@@ -290,6 +313,9 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 			else if (get_col==cross_color) {
 				logAnnotWriter.println(String.format("%-4d %-4d %-6.2f %-6.2f %-6.2f %-3.2f -1", id++,	cross_type, 	xc, yc, 0f,     r));
 			}
+			else if (get_col==ignore_color) {
+				logAnnotWriter.println(String.format("%-4d %-4d %-6.2f %-6.2f %-6.2f %-3.2f -1", id++,	ignore_type, 	xc, yc, 0f,     r));
+			}
 
 		}
 
@@ -315,7 +341,7 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 		canvas.getImage().updateAndDraw();
 
 		GenericDialog gd = new GenericDialog("CHOOSE...");
-		gd.addChoice("choose ", new String[]{"BIF", "CRS", "END", "NON"}, "NON");
+		gd.addChoice("choose ", new String[]{"BIF", "CRS", "END", "NON", "IGNORE"}, "NON");
 		gd.showDialog();
 
 		if (gd.wasCanceled()) return;
@@ -334,6 +360,9 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 		if (aa.equals("CRS")) {
 			addCircle(cross_color);
 		}
+		if (aa.equals("IGNORE")) {
+			addCircle(ignore_color);
+		}
 
 	}
 
@@ -345,8 +374,9 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 		if (e.getKeyChar()=='-') canvas.zoomOut((int) pick_X, (int) pick_Y);
 		if (e.getKeyChar()=='b' || e.getKeyChar()=='3') addCircle(bif_color);
 		if (e.getKeyChar()=='e' || e.getKeyChar()=='1') addCircle(end_color);
-		if (e.getKeyChar()=='n') addCircle(none_color);
+		if (e.getKeyChar()=='n' || e.getKeyChar()=='0') addCircle(none_color);
 		if (e.getKeyChar()=='c' || e.getKeyChar()=='4') addCircle(cross_color);
+		if (e.getKeyChar()=='i' || e.getKeyChar()=='7') addCircle(ignore_color);
 		if (e.getKeyChar()=='d') removeCircle();
 		if (e.getKeyChar()=='s') {
 			GenericDialog gd = new GenericDialog("Save?");

@@ -16,7 +16,8 @@ public class AnnotationerHelp implements PlugIn {
 		instructions += " 'b' or '3' \t add bifurcation \n";
 		instructions += " 'e' or '1' \t add endpoint \n";
 		instructions += " 'c' or '4' \t add crosspoint \n";
-		instructions += " 'n' \t add nonpoint (negative example - experimental) \n";
+		instructions += " 'n' or '0' \t add nonpoint (negative example - experimental) \n";
+		instructions += " 'i' or '7' \t add ignore region (detections will be ignored there) \n";
 		instructions += " 'd' \t delete detection \n";
 		instructions += " 's' \t save and export annotations \n";
 
