@@ -74,7 +74,7 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 		image_dir = inimg.getOriginalFileInfo().directory; 	//  + File.separator  + image_name
 		image_name = inimg.getShortTitle();
 
-		gndtth_path 				= image_dir + image_name + "_annotation.swc";
+		gndtth_path 				= image_dir + image_name + ".swc";
 
 		// look for the annotations and initialize Overlays
 		ov_annot = new Overlay();
