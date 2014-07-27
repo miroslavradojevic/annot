@@ -23,7 +23,7 @@ public class ViewAnnotation implements PlugIn {
         Overlay ov_annot;
 
         GenericDialog gd = new GenericDialog("Select Annotation");
-        gd.addStringField("path to SWC ", annotation_path, 100);
+        gd.addStringField("path to SWC ", annotation_path, 50);
         gd.showDialog();
         if (gd.wasCanceled()) return;
         annotation_path = gd.getNextString();
