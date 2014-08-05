@@ -1,8 +1,10 @@
 import ij.IJ;
 import ij.ImagePlus;
+import ij.Prefs;
 import ij.gui.GenericDialog;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
+import ij.io.OpenDialog;
 import ij.plugin.PlugIn;
 
 import java.io.File;
@@ -15,20 +17,14 @@ public class ViewAnnotation implements PlugIn {
 
     public void run(String s) {
 
-        IJ.open();
-        ImagePlus annotated_img = IJ.getImage();
+        OpenDialog dc = new OpenDialog("Select image file");
+        ImagePlus annotated_img = new ImagePlus(dc.getPath());
 
-        String annotation_path = annotated_img.getOriginalFileInfo().directory;
+        OpenDialog.setDefaultDirectory(annotated_img.getOriginalFileInfo().directory);
+        dc = new OpenDialog("Select annotation (.swc) file");
+        String annotation_path = dc.getPath();
 
-        Overlay ov_annot;
-
-        GenericDialog gd = new GenericDialog("Select Annotation");
-        gd.addStringField("path to SWC ", annotation_path, 50);
-        gd.showDialog();
-        if (gd.wasCanceled()) return;
-        annotation_path = gd.getNextString();
-
-        ov_annot = new Overlay();
+        Overlay ov_annot = new Overlay();
 
         int nr_bifs 	= 0;
         int nr_cross 	= 0;
@@ -82,10 +78,17 @@ public class ViewAnnotation implements PlugIn {
             }
 
         }
+        else {
+            System.out.println(annotation_path + " does not exist.");
+        }
 
-        annotated_img.setOverlay(ov_annot);
+
 
         IJ.log("loaded " + nr_bifs + " bifs, " + nr_ends + " ends, " + nr_nons + " nons, " + nr_cross + " crosses, " + nr_ignores + " ignores");
+
+        annotated_img.setOverlay(ov_annot);
+        annotated_img.show();
+
         IJ.setTool("hand");
 
     }

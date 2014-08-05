@@ -92,16 +92,16 @@ public class ReadSWC {
 
 	}
 
-	public void print(){
-
-		//		for (int ii=0; ii<nodes.size(); ii++) {
-		//            for (int jj=0; jj<7; jj++) {
-		//                System.out.print(nodes.get(ii)[jj]+"\t");
-		//            }
-		//            System.out.println();
-		//		}
-
-	}
+//	public void print(){
+//
+//				for (int ii=0; ii<nodes.size(); ii++) {
+//		            for (int jj=0; jj<7; jj++) {
+//		                System.out.print(nodes.get(ii)[jj]+"\t");
+//		            }
+//		            System.out.println();
+//				}
+//
+//	}
 
 	public void exportBifurcations(String swcBifExportPath){
 
