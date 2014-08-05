@@ -298,8 +298,8 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 
 			Color get_col = ov_annot.get(i).getFillColor();
 
-			float xc = x+r/1-.0f;
-			float yc = y+r/1-.0f;
+			float xc = x+r;
+			float yc = y+r;
 
 			if (get_col==bif_color) {
 				logAnnotWriter.println(String.format("%-4d %-4d %-6.2f %-6.2f %-6.2f %-3.2f -1", id++, 	bif_type, 		xc, yc, 0f,     r));
