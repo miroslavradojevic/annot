@@ -30,7 +30,7 @@ public class ViewAnnotation implements PlugIn {
         int nr_cross 	= 0;
         int nr_ends 	= 0;
         int nr_nons 	= 0;
-        int nr_ignores = 0;
+        int nr_ignores  = 0;
 
         if ((new File(annotation_path)).exists()) { // if it exists - update the overlays first
 
