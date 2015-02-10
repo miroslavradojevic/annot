@@ -163,6 +163,18 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 
     public void run(String s) {
 
+        //to open the dialog to directories and size
+        MainPanel panelMain = new MainPanel();
+        GenericDialog gdG = new GenericDialog("Annotationer");
+        gdG.add(panelMain);
+        gdG.addMessage("");
+        MainPanel panelD = (MainPanel) gdG.getComponent(0);
+        gdG.showDialog();
+        if (gdG.wasCanceled()) {
+            return;
+        }
+
+
         System.out.println("patch annotationer...");
 
         // select the image
