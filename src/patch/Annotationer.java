@@ -30,32 +30,26 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 
     }
 
-    @Override
     public void imageClosed(ImagePlus imagePlus) {
 
     }
 
-    @Override
     public void imageUpdated(ImagePlus imagePlus) {
 
     }
 
-    @Override
     public void keyTyped(KeyEvent e) {
 
     }
 
-    @Override
     public void keyPressed(KeyEvent e) {
 
     }
 
-    @Override
     public void keyReleased(KeyEvent e) {
 
     }
 
-    @Override
     public void mouseClicked(MouseEvent e) {
 
         System.out.println("clicked");
@@ -65,7 +59,6 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 
     }
 
-    @Override
     public void mousePressed(MouseEvent e) {
 
         x1 = 	canvas.offScreenX(e.getX());
@@ -78,11 +71,8 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 //
 //        canvas.getImage().updateAndDraw();
 
-
-
     }
 
-    @Override
     public void mouseReleased(MouseEvent e) {
         x2 = 	canvas.offScreenX(e.getX());
         y2 = 	canvas.offScreenY(e.getY());
@@ -92,8 +82,10 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 //        float w = x2 - x1;
 //        float h = y2 - y1;
 
-        y2 = y1 + Math.max(x2-x1, y2-y1);
-        x2 = x1 + Math.max(x2-x1, y2-y1);
+        float d = Math.max(x2-x1, y2-y1);
+
+        y2 = y1 + d;
+        x2 = x1 + d;
 
         PolygonRoi pr = new PolygonRoi(new float[]{x1,x1,x2,x2}, new float[]{y1,y2,y2,y1}, 4, PolygonRoi.POLYGON);
         pr.setFillColor(new Color(1,1,0,0.25f));
@@ -139,8 +131,10 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
             canvas.getImage().updateAndDraw();
 
             // extract the patch
-
-
+            inimg.setRoi((int)x1,(int)y1,(int)d,(int)d);
+            IJ.run(inimg, "Copy", "");
+            IJ.run("Internal Clipboard", "");
+            IJ.run(IJ.getImage(), "Scale...", "x=- y=- width=256 height=256 interpolation=Bicubic average create title=frame");
 
         }
         if (aa.equalsIgnoreCase("NEG")) {
