@@ -1,3 +1,5 @@
+package critpoint;
+
 import ij.*;
 import ij.gui.*;
 import ij.io.OpenDialog;
@@ -65,13 +67,16 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 		Prefs.set("id.folder", in_folder);
 
 		inimg = new ImagePlus(image_path);
+
 		if(inimg==null) return;
+		if(!getFileExtension(inimg.getTitle()).equalsIgnoreCase("TIF")) {IJ.log("open image with .TIF extension"); return;}
 
 		pick_R = Math.min(inimg.getWidth(), inimg.getHeight()) / 30f; // initial size of the circle
 		pick_X = 0;
 		pick_Y = 0;
-
+		IJ.log(":"+ (inimg!=null)+"\n"+image_path);
 		image_dir = inimg.getOriginalFileInfo().directory; 	//  + File.separator  + image_name
+		IJ.log(inimg.getTitle());
 		image_name = inimg.getShortTitle();
 
 		gndtth_path 				= image_dir + image_name + ".swc";
@@ -282,7 +287,7 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 		} catch (IOException e) {}
 
 		// exports the overlay with annotations to output files in swc format
-		int id= 0;
+		int id= 1;
 
 		for (int i=0; i<ov_annot.size()-1; i++) {
 
@@ -406,6 +411,17 @@ public class Annotationer  implements PlugIn, MouseListener, MouseMotionListener
 		String gndtth_path_spec = gd.getNextString();
 		export(gndtth_path_spec);
 
+	}
+
+	public static String getFileExtension(String file_path) {
+		String extension = "";
+
+		int i = file_path.lastIndexOf('.');
+		if (i >= 0) {
+			extension = file_path.substring(i+1);
+		}
+
+		return extension;
 	}
 
 	public void imageOpened(ImagePlus imagePlus) {}

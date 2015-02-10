@@ -1,3 +1,5 @@
+package critpoint;
+
 import ij.IJ;
 import ij.plugin.PlugIn;
 

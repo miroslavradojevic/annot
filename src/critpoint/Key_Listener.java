@@ -1,4 +1,4 @@
-package annotate;
+package critpoint;
 
 import ij.*;
 import ij.plugin.*;

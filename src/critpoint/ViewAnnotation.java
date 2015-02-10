@@ -1,7 +1,7 @@
+package critpoint;
+
 import ij.IJ;
 import ij.ImagePlus;
-import ij.Prefs;
-import ij.gui.GenericDialog;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
 import ij.io.OpenDialog;
