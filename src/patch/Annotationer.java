@@ -5,20 +5,27 @@ import ij.ImageListener;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.gui.*;
+import ij.io.FileSaver;
 import ij.io.OpenDialog;
 import ij.plugin.PlugIn;
+import ij.process.ImageProcessor;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
 
 /**
  * Created by miroslav on 9-2-15.
  */
 public class Annotationer implements PlugIn, MouseListener, MouseMotionListener, KeyListener, ImageListener {
 
-    ImagePlus   inimg;
+    ImagePlus inimg;
 
-    String      image_path;
+    int i, j = 0;
+
+    String image_path;
+    String pos_path;
+    String neg_path;
     ImageCanvas canvas;
     ImageWindow wind;
 
@@ -61,8 +68,8 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 
     public void mousePressed(MouseEvent e) {
 
-        x1 = 	canvas.offScreenX(e.getX());
-        y1 = 	canvas.offScreenY(e.getY());
+        x1 = canvas.offScreenX(e.getX());
+        y1 = canvas.offScreenY(e.getY());
 //        System.out.println("pressed " + x1 + " , " + y1);
 //        x1 = 	canvas.offScreenX(e.getX());
 //        y1 = 	canvas.offScreenY(e.getY());
@@ -74,28 +81,22 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
     }
 
     public void mouseReleased(MouseEvent e) {
-        x2 = 	canvas.offScreenX(e.getX());
-        y2 = 	canvas.offScreenY(e.getY());
+        x2 = canvas.offScreenX(e.getX());
+        y2 = canvas.offScreenY(e.getY());
 
 //        System.out.println("released " + x2 + " , " + y2);
-
 //        float w = x2 - x1;
 //        float h = y2 - y1;
-
-        float d = Math.max(x2-x1, y2-y1);
+        float d = Math.max(x2 - x1, y2 - y1);
 
         y2 = y1 + d;
         x2 = x1 + d;
 
-        PolygonRoi pr = new PolygonRoi(new float[]{x1,x1,x2,x2}, new float[]{y1,y2,y2,y1}, 4, PolygonRoi.POLYGON);
-        pr.setFillColor(new Color(1,1,0,0.25f));
-
+        PolygonRoi pr = new PolygonRoi(new float[]{x1, x1, x2, x2}, new float[]{y1, y2, y2, y1}, 4, PolygonRoi.POLYGON);
+        pr.setFillColor(new Color(1, 1, 0, 0.25f));
 
 //        ov_rectangle.clear();
         ov_rectangle.add(pr);
-
-
-
 
         System.out.println("  ---> " + ov_rectangle.size());
 
@@ -108,7 +109,6 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 //        rr.setFillColor(Color.YELLOW);
 //        ov_rectangle.add(pr);
 //        IJ.log("-> " + ov_rectangle.size());
-
         canvas.setOverlay(ov_rectangle);
         canvas.getImage().updateAndDraw();
 
@@ -118,7 +118,7 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 
         if (gd.wasCanceled()) {
             System.out.println("removing..");
-            ov_rectangle.remove(ov_rectangle.size()-1);
+            ov_rectangle.remove(ov_rectangle.size() - 1);
             canvas.setOverlay(ov_rectangle);
             canvas.getImage().updateAndDraw();
             return;
@@ -131,10 +131,19 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
             canvas.getImage().updateAndDraw();
 
             // extract the patch
-            inimg.setRoi((int)x1,(int)y1,(int)d,(int)d);
-            IJ.run(inimg, "Copy", "");
-            IJ.run("Internal Clipboard", "");
-            IJ.run(IJ.getImage(), "Scale...", "x=- y=- width=256 height=256 interpolation=Bicubic average create title=frame");
+//            inimg.setRoi((int) x1, (int) y1, (int) d, (int) d);
+//            IJ.run(inimg, "Copy", "");
+//            IJ.run("Internal Clipboard", "");
+//            IJ.run(IJ.getImage(), "Scale...", "x=- y=- width=256 height=256 interpolation=Bicubic average create title=frame");
+
+            //other way (without to scale the image)
+            ImageProcessor ip = canvas.getImage().getChannelProcessor();
+            ImageProcessor ipCopy = ip.duplicate();
+            ipCopy.setRoi(pr);
+            ipCopy = ipCopy.crop();
+            ImagePlus impCopy = new ImagePlus("pos_" + i, ipCopy);
+            new FileSaver(impCopy).saveAsTiff(pos_path + File.separator + "pos_" + i + ".tif");
+            i++;
 
         }
         if (aa.equalsIgnoreCase("NEG")) {
@@ -142,18 +151,30 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
             canvas.setOverlay(ov_rectangle);
             canvas.getImage().updateAndDraw();
 
+            ImageProcessor ip = canvas.getImage().getChannelProcessor();
+            ImageProcessor ipCopy = ip.duplicate();
+            ipCopy.setRoi(pr);
+            ipCopy = ipCopy.crop();
+            ImagePlus impCopy = new ImagePlus("pos_" + i, ipCopy);
+            new FileSaver(impCopy).saveAsTiff(neg_path + File.separator + "neg_" + j + ".tif");
+            j++;
 
         }
 
 //        System.out.println(aa + " ... ");
-
-
     }
 
-    public void mouseEntered(MouseEvent e) {}
-    public void mouseExited(MouseEvent e) {}
-    public void mouseDragged(MouseEvent e) {}
-    public void mouseMoved(MouseEvent e) {}
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    public void mouseExited(MouseEvent e) {
+    }
+
+    public void mouseDragged(MouseEvent e) {
+    }
+
+    public void mouseMoved(MouseEvent e) {
+    }
 
     public void run(String s) {
 
@@ -167,7 +188,8 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
         if (gdG.wasCanceled()) {
             return;
         }
-
+        pos_path = panelD.getTxtUrlPos();
+        neg_path = panelD.getTxtUrlNeg();
 
         System.out.println("patch annotationer...");
 
@@ -177,16 +199,22 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
         OpenDialog dc = new OpenDialog("Select file");
         in_folder = dc.getDirectory();
         image_path = dc.getPath();
-        if (image_path==null) return;
+        if (image_path == null) {
+            return;
+        }
         Prefs.set("id.folder", in_folder);
 
         inimg = new ImagePlus(image_path);
 
-        if(inimg==null) return;
-        if(!getFileExtension(inimg.getTitle()).equalsIgnoreCase("TIF")) {IJ.log("open image with .TIF extension"); return;}
+        if (inimg == null) {
+            return;
+        }
+        if (!getFileExtension(inimg.getTitle()).equalsIgnoreCase("TIF")) {
+            IJ.log("open image with .TIF extension");
+            return;
+        }
 
 //        IJ.log(image_path);
-
         inimg.show();
         wind = inimg.getWindow();
         canvas = inimg.getCanvas();
@@ -209,7 +237,7 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 
         int i = file_path.lastIndexOf('.');
         if (i >= 0) {
-            extension = file_path.substring(i+1);
+            extension = file_path.substring(i + 1);
         }
 
         return extension;
