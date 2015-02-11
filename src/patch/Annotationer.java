@@ -24,14 +24,16 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
     int i, j = 0;
 
     String image_path;
-    String pos_path;
-    String neg_path;
+    String path;
+//    String neg_path;
     ImageCanvas canvas;
     ImageWindow wind;
-
+    String[] namesGroups;
     Overlay ov_rectangle = new Overlay();
 
     float x1, y1, x2, y2;
+
+    private static Color[] ColorArray = {new Color(1, 1, 0, 0.25f), new Color(1, 0, 1, 0.25f), new Color(1, 1, 1, 0.25f), new Color(1, 0, 0, 0.25f), new Color(0, 1, 0, 0.25f), new Color(0, 0, 1, 0.25f), new Color(0.96f, 0, 0.52f, 0.25f)};
 
     public void imageOpened(ImagePlus imagePlus) {
 
@@ -87,11 +89,11 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 //        System.out.println("released " + x2 + " , " + y2);
 //        float w = x2 - x1;
 //        float h = y2 - y1;
-        float d = Math.max(x2 - x1, y2 - y1);
-
-        y2 = y1 + d;
-        x2 = x1 + d;
-
+        //to do squares
+//        float d = Math.max(x2 - x1, y2 - y1);
+//
+//        y2 = y1 + d;
+//        x2 = x1 + d;
         PolygonRoi pr = new PolygonRoi(new float[]{x1, x1, x2, x2}, new float[]{y1, y2, y2, y1}, 4, PolygonRoi.POLYGON);
         pr.setFillColor(new Color(1, 1, 0, 0.25f));
 
@@ -113,7 +115,7 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
         canvas.getImage().updateAndDraw();
 
         GenericDialog gd = new GenericDialog("CHOOSE...");
-        gd.addChoice("choose ", new String[]{"POS", "NEG"}, "POS");
+        gd.addChoice("choose ", namesGroups, namesGroups[0]);
         gd.showDialog();
 
         if (gd.wasCanceled()) {
@@ -125,42 +127,68 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
         }
 
         String aa = gd.getNextChoice();
-
-        if (aa.equalsIgnoreCase("POS")) {
-            canvas.setOverlay(ov_rectangle);
-            canvas.getImage().updateAndDraw();
-
-            // extract the patch
-//            inimg.setRoi((int) x1, (int) y1, (int) d, (int) d);
-//            IJ.run(inimg, "Copy", "");
-//            IJ.run("Internal Clipboard", "");
-//            IJ.run(IJ.getImage(), "Scale...", "x=- y=- width=256 height=256 interpolation=Bicubic average create title=frame");
-
-            //other way (without to scale the image)
-            ImageProcessor ip = canvas.getImage().getChannelProcessor();
-            ImageProcessor ipCopy = ip.duplicate();
-            ipCopy.setRoi(pr);
-            ipCopy = ipCopy.crop();
-            ImagePlus impCopy = new ImagePlus("pos_" + i, ipCopy);
-            new FileSaver(impCopy).saveAsTiff(pos_path + File.separator + "pos_" + i + ".tif");
-            i++;
-
-        }
-        if (aa.equalsIgnoreCase("NEG")) {
-            pr.setFillColor(null);
-            canvas.setOverlay(ov_rectangle);
-            canvas.getImage().updateAndDraw();
-
-            ImageProcessor ip = canvas.getImage().getChannelProcessor();
-            ImageProcessor ipCopy = ip.duplicate();
-            ipCopy.setRoi(pr);
-            ipCopy = ipCopy.crop();
-            ImagePlus impCopy = new ImagePlus("pos_" + i, ipCopy);
-            new FileSaver(impCopy).saveAsTiff(neg_path + File.separator + "neg_" + j + ".tif");
-            j++;
-
+//        IJ.log("aa " + aa);
+        int n = -1;
+        for (int i = 0; i < namesGroups.length; i++) {
+            if (namesGroups[i].equals(aa)) {
+                n = i;
+//                IJ.log("i " + String.valueOf(i));
+                break;
+            }
         }
 
+        pr.setFillColor(ColorArray[n]);
+//        IJ.log("n " + String.valueOf(n));
+        canvas.setOverlay(ov_rectangle);
+        canvas.getImage().updateAndDraw();
+
+        ImageProcessor ip = canvas.getImage().getChannelProcessor();
+        ImageProcessor ipCopy = ip.duplicate();
+        ipCopy.setRoi(pr);
+        ipCopy = ipCopy.crop();
+        ImagePlus impCopy = new ImagePlus(aa, ipCopy);
+        String auxPath = path + File.separator + aa;
+        File url = new File(auxPath);
+        url.mkdirs();
+        new FileSaver(impCopy).saveAsTiff(auxPath + File.separator + aa + "_" + i + ".tif");
+        i++;
+
+        //-----------
+//        if (aa.equalsIgnoreCase(namesGroups[0])) {
+//            
+//             canvas.setOverlay(ov_rectangle);
+//            canvas.getImage().updateAndDraw();
+//
+//            // extract the patch
+////            inimg.setRoi((int) x1, (int) y1, (int) d, (int) d);
+////            IJ.run(inimg, "Copy", "");
+////            IJ.run("Internal Clipboard", "");
+////            IJ.run(IJ.getImage(), "Scale...", "x=- y=- width=256 height=256 interpolation=Bicubic average create title=frame");
+//
+//            //other way (without to scale the image)
+//            ImageProcessor ip = canvas.getImage().getChannelProcessor();
+//            ImageProcessor ipCopy = ip.duplicate();
+//            ipCopy.setRoi(pr);
+//            ipCopy = ipCopy.crop();
+//            ImagePlus impCopy = new ImagePlus(namesGroups[0], ipCopy);
+//            new FileSaver(impCopy).saveAsTiff(pos_path + File.separator +File.separator+ namesGroups[0]+"_" + i + ".tif");
+//            i++;
+//
+//        }
+//        else if (aa.equalsIgnoreCase(namesGroups[1])) {
+//            pr.setFillColor(new Color(1,0,0,0.25f));
+//            canvas.setOverlay(ov_rectangle);
+//            canvas.getImage().updateAndDraw();
+//
+//            ImageProcessor ip = canvas.getImage().getChannelProcessor();
+//            ImageProcessor ipCopy = ip.duplicate();
+//            ipCopy.setRoi(pr);
+//            ipCopy = ipCopy.crop();
+//            ImagePlus impCopy = new ImagePlus("neg_" + i, ipCopy);
+//            new FileSaver(impCopy).saveAsTiff(neg_path + File.separator + "neg_" + j + ".tif");
+//            j++;
+//
+//        }
 //        System.out.println(aa + " ... ");
     }
 
@@ -188,8 +216,12 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
         if (gdG.wasCanceled()) {
             return;
         }
-        pos_path = panelD.getTxtUrlPos();
-        neg_path = panelD.getTxtUrlNeg();
+        path = panelD.getTxtUrl();
+        int nGroups = panelD.getTxtNGroups();
+        namesGroups = new String[nGroups];
+        for (int i = 0; i < nGroups; i++) {
+            namesGroups[i] = "Group " + (i + 1);
+        }
 
         System.out.println("patch annotationer...");
 
