@@ -4,9 +4,11 @@ import ij.IJ;
 import ij.ImageListener;
 import ij.ImagePlus;
 import ij.Prefs;
+import ij.WindowManager;
 import ij.gui.*;
 import ij.io.FileSaver;
 import ij.io.OpenDialog;
+import ij.plugin.Duplicator;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 
@@ -23,9 +25,8 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 
     int i, j = 0;
 
+    Setting settings;
     String image_path;
-    String path;
-//    String neg_path;
     ImageCanvas canvas;
     ImageWindow wind;
     String[] namesGroups;
@@ -33,6 +34,7 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 
     float x1, y1, x2, y2;
 
+    //there are 7 different colors
     private static Color[] ColorArray = {new Color(1, 1, 0, 0.25f), new Color(1, 0, 1, 0.25f), new Color(1, 1, 1, 0.25f), new Color(1, 0, 0, 0.25f), new Color(0, 1, 0, 0.25f), new Color(0, 0, 1, 0.25f), new Color(0.96f, 0, 0.52f, 0.25f)};
 
     public void imageOpened(ImagePlus imagePlus) {
@@ -70,8 +72,9 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 
     public void mousePressed(MouseEvent e) {
 
-        x1 = canvas.offScreenX(e.getX());
-        y1 = canvas.offScreenY(e.getY());
+        if (IJ.getToolName().equals("rectangle")) {
+            x1 = canvas.offScreenX(e.getX());
+            y1 = canvas.offScreenY(e.getY());
 //        System.out.println("pressed " + x1 + " , " + y1);
 //        x1 = 	canvas.offScreenX(e.getX());
 //        y1 = 	canvas.offScreenY(e.getY());
@@ -79,10 +82,12 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 //        IJ.log("pressed " + x1 + " . " + y1);
 //
 //        canvas.getImage().updateAndDraw();
+        }
 
     }
 
     public void mouseReleased(MouseEvent e) {
+         if (IJ.getToolName().equals("rectangle")) {
         x2 = canvas.offScreenX(e.getX());
         y2 = canvas.offScreenY(e.getY());
 
@@ -90,10 +95,12 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 //        float w = x2 - x1;
 //        float h = y2 - y1;
         //to do squares
-//        float d = Math.max(x2 - x1, y2 - y1);
-//
-//        y2 = y1 + d;
-//        x2 = x1 + d;
+        if (settings.getScale()) {
+            float d = Math.max(x2 - x1, y2 - y1);
+
+            y2 = y1 + d;
+            x2 = x1 + d;
+        }
         PolygonRoi pr = new PolygonRoi(new float[]{x1, x1, x2, x2}, new float[]{y1, y2, y2, y1}, 4, PolygonRoi.POLYGON);
         pr.setFillColor(new Color(1, 1, 0, 0.25f));
 
@@ -127,18 +134,15 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
         }
 
         String aa = gd.getNextChoice();
-//        IJ.log("aa " + aa);
         int n = -1;
         for (int i = 0; i < namesGroups.length; i++) {
             if (namesGroups[i].equals(aa)) {
                 n = i;
-//                IJ.log("i " + String.valueOf(i));
                 break;
             }
         }
 
         pr.setFillColor(ColorArray[n]);
-//        IJ.log("n " + String.valueOf(n));
         canvas.setOverlay(ov_rectangle);
         canvas.getImage().updateAndDraw();
 
@@ -147,49 +151,21 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
         ipCopy.setRoi(pr);
         ipCopy = ipCopy.crop();
         ImagePlus impCopy = new ImagePlus(aa, ipCopy);
-        String auxPath = path + File.separator + aa;
+
+        if (settings.getScale()) {
+            IJ.run(impCopy, "Scale...", "x=- y=- width=" + settings.getWScale() + " height=" + settings.getHScale() + " interpolation=Bicubic average create title=Scaling...");
+            ImagePlus impScaled = WindowManager.getImage("Scaling...");
+            impCopy = DuplicateImage(impScaled);
+            impScaled.changes = false;
+            impScaled.close();
+        }
+
+        String auxPath = settings.getPath() + File.separator + aa;
         File url = new File(auxPath);
         url.mkdirs();
         new FileSaver(impCopy).saveAsTiff(auxPath + File.separator + aa + "_" + i + ".tif");
         i++;
-
-        //-----------
-//        if (aa.equalsIgnoreCase(namesGroups[0])) {
-//            
-//             canvas.setOverlay(ov_rectangle);
-//            canvas.getImage().updateAndDraw();
-//
-//            // extract the patch
-////            inimg.setRoi((int) x1, (int) y1, (int) d, (int) d);
-////            IJ.run(inimg, "Copy", "");
-////            IJ.run("Internal Clipboard", "");
-////            IJ.run(IJ.getImage(), "Scale...", "x=- y=- width=256 height=256 interpolation=Bicubic average create title=frame");
-//
-//            //other way (without to scale the image)
-//            ImageProcessor ip = canvas.getImage().getChannelProcessor();
-//            ImageProcessor ipCopy = ip.duplicate();
-//            ipCopy.setRoi(pr);
-//            ipCopy = ipCopy.crop();
-//            ImagePlus impCopy = new ImagePlus(namesGroups[0], ipCopy);
-//            new FileSaver(impCopy).saveAsTiff(pos_path + File.separator +File.separator+ namesGroups[0]+"_" + i + ".tif");
-//            i++;
-//
-//        }
-//        else if (aa.equalsIgnoreCase(namesGroups[1])) {
-//            pr.setFillColor(new Color(1,0,0,0.25f));
-//            canvas.setOverlay(ov_rectangle);
-//            canvas.getImage().updateAndDraw();
-//
-//            ImageProcessor ip = canvas.getImage().getChannelProcessor();
-//            ImageProcessor ipCopy = ip.duplicate();
-//            ipCopy.setRoi(pr);
-//            ipCopy = ipCopy.crop();
-//            ImagePlus impCopy = new ImagePlus("neg_" + i, ipCopy);
-//            new FileSaver(impCopy).saveAsTiff(neg_path + File.separator + "neg_" + j + ".tif");
-//            j++;
-//
-//        }
-//        System.out.println(aa + " ... ");
+         }
     }
 
     public void mouseEntered(MouseEvent e) {
@@ -206,7 +182,7 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
 
     public void run(String s) {
 
-        //to open the dialog to directories and size
+        //to open the dialog with the settings
         MainPanel panelMain = new MainPanel();
         GenericDialog gdG = new GenericDialog("Annotationer");
         gdG.add(panelMain);
@@ -216,10 +192,13 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
         if (gdG.wasCanceled()) {
             return;
         }
-        path = panelD.getTxtUrl();
-        int nGroups = panelD.getTxtNGroups();
-        namesGroups = new String[nGroups];
-        for (int i = 0; i < nGroups; i++) {
+        settings = new Setting(panelD.getTxtUrl(), panelD.getTxtNGroups(), panelD.getRbtnSquare(), panelD.getRbtnScaled(), panelD.getTxtWidth(), panelD.getTxtHeight());
+        if ((settings.getPath().isEmpty()) || (settings.getNGroups() == 0)) {
+            IJ.error("You have to write an url for the results and the number of groups that you need to work.");
+            return;
+        }
+        namesGroups = new String[settings.getNGroups()];
+        for (int i = 0; i < settings.getNGroups(); i++) {
             namesGroups[i] = "Group " + (i + 1);
         }
 
@@ -273,6 +252,13 @@ public class Annotationer implements PlugIn, MouseListener, MouseMotionListener,
         }
 
         return extension;
+    }
+
+    public static ImagePlus DuplicateImage(ImagePlus original) {
+        if (original == null) {
+            return null;
+        }
+        return (new Duplicator().run(original));
     }
 
 }

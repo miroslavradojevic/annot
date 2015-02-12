@@ -40,6 +40,9 @@ public class MainPanel extends javax.swing.JPanel {
         txtHeight = new javax.swing.JTextField();
         lblNGroups = new javax.swing.JLabel();
         txtNGroups = new javax.swing.JTextField();
+        lblQuestion = new javax.swing.JLabel();
+        rbtnSquare = new javax.swing.JRadioButton();
+        rbtnScaled = new javax.swing.JRadioButton();
 
         lblUrl.setText("Url Results:");
 
@@ -51,20 +54,37 @@ public class MainPanel extends javax.swing.JPanel {
         });
 
         lblSizeRect.setText("Size of Rectangle (pixels):");
+        lblSizeRect.setEnabled(false);
 
         lblwxh.setText("width x height ");
+        lblwxh.setEnabled(false);
 
         lblx.setText("x");
+        lblx.setEnabled(false);
 
         txtWidth.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
         txtWidth.setText("256");
+        txtWidth.setEnabled(false);
 
         txtHeight.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
         txtHeight.setText("256");
+        txtHeight.setEnabled(false);
 
         lblNGroups.setText("How many groups want to do?");
 
         txtNGroups.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        txtNGroups.setText("2");
+
+        lblQuestion.setText("Do you want to work with...");
+
+        rbtnSquare.setText("...square selections?");
+
+        rbtnScaled.setText("...scaled images?");
+        rbtnScaled.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                rbtnScaledItemStateChanged(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -81,19 +101,26 @@ public class MainPanel extends javax.swing.JPanel {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(btnUrl))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(lblSizeRect)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txtWidth, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(lblx, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txtHeight, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(lblwxh))
-                    .addGroup(layout.createSequentialGroup()
                         .addComponent(lblNGroups)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txtNGroups, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(txtNGroups, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(lblQuestion)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(10, 10, 10)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(rbtnScaled)
+                            .addComponent(rbtnSquare)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(21, 21, 21)
+                                .addComponent(lblSizeRect)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(txtWidth, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(lblx, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(txtHeight, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(lblwxh)))))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -104,17 +131,23 @@ public class MainPanel extends javax.swing.JPanel {
                     .addComponent(lblUrl)
                     .addComponent(txtUrl, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnUrl))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblNGroups)
+                    .addComponent(txtNGroups, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(lblQuestion)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(rbtnSquare)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(rbtnScaled)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblSizeRect)
                     .addComponent(txtWidth, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(txtHeight, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(lblwxh)
                     .addComponent(lblx))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(lblNGroups)
-                    .addComponent(txtNGroups, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -140,14 +173,33 @@ public class MainPanel extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_btnUrlActionPerformed
 
+    private void rbtnScaledItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_rbtnScaledItemStateChanged
+        if (rbtnScaled.isSelected()) {
+            this.lblSizeRect.setEnabled(true);
+            this.txtWidth.setEnabled(true);
+            this.txtHeight.setEnabled(true);
+            this.lblwxh.setEnabled(true);
+            this.lblx.setEnabled(true);
+        } else {
+            this.lblSizeRect.setEnabled(false);
+            this.txtWidth.setEnabled(false);
+            this.txtHeight.setEnabled(false);
+            this.lblwxh.setEnabled(false);
+            this.lblx.setEnabled(false);
+        }
+    }//GEN-LAST:event_rbtnScaledItemStateChanged
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnUrl;
     private javax.swing.JLabel lblNGroups;
+    private javax.swing.JLabel lblQuestion;
     private javax.swing.JLabel lblSizeRect;
     private javax.swing.JLabel lblUrl;
     private javax.swing.JLabel lblwxh;
     private javax.swing.JLabel lblx;
+    private javax.swing.JRadioButton rbtnScaled;
+    private javax.swing.JRadioButton rbtnSquare;
     private javax.swing.JTextField txtHeight;
     private javax.swing.JTextField txtNGroups;
     private javax.swing.JTextField txtUrl;
@@ -158,6 +210,7 @@ public class MainPanel extends javax.swing.JPanel {
     public String getTxtUrl() {
         return this.txtUrl.getText();
     }
+
     public int getTxtWidth() {
         return Integer.parseInt(this.txtWidth.getText());
     }
@@ -166,8 +219,19 @@ public class MainPanel extends javax.swing.JPanel {
         return Integer.parseInt(this.txtHeight.getText());
     }
 
-    public int getTxtNGroups()
-    {
+    public int getTxtNGroups() {
+        if(txtNGroups.getText().isEmpty())
+        {
+            txtNGroups.setText("0");
+        }
         return Integer.parseInt(this.txtNGroups.getText());
+    }
+
+    public boolean getRbtnSquare() {
+        return this.rbtnSquare.isSelected();
+    }
+
+    public boolean getRbtnScaled() {
+        return this.rbtnScaled.isSelected();
     }
 }
