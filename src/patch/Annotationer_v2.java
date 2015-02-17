@@ -10,6 +10,7 @@ import ij.io.FileSaver;
 import ij.io.OpenDialog;
 import ij.plugin.Duplicator;
 import ij.plugin.PlugIn;
+import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 
 import java.awt.*;
@@ -27,7 +28,6 @@ public class Annotationer_v2 implements PlugIn {
 
     int n, j = 0;
 
-
     String image_path;
     ImageCanvas canvas;
     ImageWindow wind;
@@ -36,7 +36,6 @@ public class Annotationer_v2 implements PlugIn {
 
     float x1, y1, x2, y2;
 
-  
     @Override
     public void run(String s) {
 
@@ -51,8 +50,8 @@ public class Annotationer_v2 implements PlugIn {
             return;
         }
 
-        String path=panelD.getTxtUrl();
-        
+        String path = panelD.getTxtUrl();
+
         if (path.isEmpty()) {
             IJ.error("You have to write an url for the results.");
             return;
@@ -117,9 +116,9 @@ public class Annotationer_v2 implements PlugIn {
 //            IJ.run(inimg, "Draw", "");
 //            inimg.updateAndDraw();
             ip = ip.crop();
-            String aa= "random_";
+            String aa = "random_";
             ImagePlus impCopy = new ImagePlus(aa, ip);
-            
+
             String auxPath = path + File.separator + aa;
             File url = new File(auxPath);
             url.mkdirs();
@@ -127,12 +126,19 @@ public class Annotationer_v2 implements PlugIn {
             n++;
 //            IJ.log(wR + " " + hR);
         }
-        
+
+        RoiManager manager = RoiManager.getInstance();
+        if (manager == null) {
+            manager = new RoiManager();
+        }
         for (Roi roiL : roiList) {
-            inimg.setRoi(roiL);
-            IJ.setForegroundColor(255, 255, 255);
-            IJ.run(inimg, "Draw", "");
-            inimg.updateAndDraw();
+            
+             //add a roi to roiManager
+            manager.addRoi(roiL);
+//            inimg.setRoi(roiL);
+//            IJ.setForegroundColor(255, 255, 255);
+//            IJ.run(inimg, "Draw", "");
+//            inimg.updateAndDraw();
         }
 
     }
