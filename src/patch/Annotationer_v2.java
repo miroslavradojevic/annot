@@ -132,8 +132,8 @@ public class Annotationer_v2 implements PlugIn {
             manager = new RoiManager();
         }
         for (Roi roiL : roiList) {
-            
-             //add a roi to roiManager
+
+            //add a roi to roiManager
             manager.addRoi(roiL);
 //            inimg.setRoi(roiL);
 //            IJ.setForegroundColor(255, 255, 255);
@@ -159,6 +159,44 @@ public class Annotationer_v2 implements PlugIn {
             return null;
         }
         return (new Duplicator().run(original));
+    }
+
+    //the coordenates of both rois
+    private double overlap(Rectangle rect1, Rectangle rect2) {
+
+        double x11 = rect1.getX();//left -up
+        double y11 = rect1.getY();//left -up
+
+        double x12 = rect1.getX() + rect1.getWidth();//right -up
+
+        double y12 = rect1.getY() + rect1.getHeight();//left-down
+
+
+        double x21 = rect2.getX();//left -up
+        double y21 = rect2.getY();//left -up
+
+        double x22 = rect2.getX() + rect2.getWidth();//right -up
+
+        double y22 = rect2.getY() + rect2.getHeight();//left-down
+
+        double xDiff;
+        if (x11 < x21) {
+            xDiff = x12 - x21;
+        } else {
+            xDiff = x22 - x11;
+        }
+
+        double yDiff;
+        if (y11 < y21) {
+            yDiff = y12 - y21;
+        } else {
+            yDiff = y22 - y11;
+        }
+        xDiff = (xDiff < 0) ? 0 : xDiff;
+        yDiff = (yDiff < 0) ? 0 : yDiff;
+        
+        
+        return xDiff*yDiff;
     }
 
 }
