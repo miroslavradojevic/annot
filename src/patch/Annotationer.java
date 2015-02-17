@@ -1,16 +1,12 @@
 package patch;
 
 import ij.IJ;
-import ij.ImageListener;
 import ij.ImagePlus;
 import ij.Prefs;
-import ij.WindowManager;
 import ij.gui.*;
 import ij.io.FileSaver;
 import ij.io.OpenDialog;
-import ij.plugin.Duplicator;
 import ij.plugin.PlugIn;
-import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
 
 import java.awt.*;
@@ -19,7 +15,6 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
-import java.util.prefs.PreferenceChangeEvent;
 
 /**
  * Created by miroslav on 9-2-15.
