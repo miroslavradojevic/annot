@@ -47,6 +47,7 @@ ${env.HOME}/jarlib/                 libraries used
     <path id="classpath">
         <!-- external modules -->
         <pathelement location="${env.HOME}/jarlib/ij.jar"/>
+        <pathelement location="${env.HOME}/jarlib/jama.jar"/>
         <!--
         <pathelement location="${env.HOME}/jarlib/imagescience.jar"/>
         <pathelement location="${env.HOME}/jarlib/flanagan.jar"/>
@@ -73,7 +74,7 @@ ${env.HOME}/jarlib/                 libraries used
             <fileset dir="${build}" includes="**/*"/>
         </delete>
 
-        <javac target="1.6" destdir="${build}" srcdir="${src}" debug="true" debuglevel="lines,vars,source"> <!-- compile with 1.5 ver -->
+        <javac target="1.5" destdir="${build}" srcdir="${src}" debug="true" debuglevel="lines,vars,source"> <!-- compile with 1.5 ver -->
             <classpath refid="classpath"/>
             <src refid="sourcepath"/>
         </javac>
