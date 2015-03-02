@@ -155,6 +155,23 @@ public class MosaicDetection implements PlugIn {
 
         }
 
+
+
+        /*
+
+
+        END HERE THE  FIRST PART
+
+
+
+         */
+
+
+        /*
+
+        REMAINDER IS FOR THE NEXT PLUGIN THAT READS THE CLASSIFICATION AND CREATES THE MAP AND EVALUATES IF GROUND TRUTH WAS GIVEN
+
+         */
 //        inimg.setOverlay(ov);
 //        inimg.updateAndDraw();
 
@@ -243,20 +260,22 @@ public class MosaicDetection implements PlugIn {
         }
 
         // visualize the scores (neurons only for now)
-        Overlay curr_ovl = inimg.getOverlay();
+        Overlay curr_ovl = new Overlay();// = inimg.getOverlay();
 
         for (int i = 0; i < xlocs.size(); i++) {
 
             Roi roi_to_add = new Roi(new Rectangle(xlocs.get(i), ylocs.get(i), D, D));
-            roi_to_add.setFillColor(new Color(1, 0, 0, n_scrs.get(i)));
-            roi_to_add.setStrokeColor(new Color(1, 0, 0, n_scrs.get(i)));
-            roi_to_add.setStrokeWidth(2);
+            roi_to_add.setFillColor(new Color(1, 0, 0, 0.3f*n_scrs.get(i)));
+            roi_to_add.setStrokeColor(new Color(1, 0, 0, 1));
+//            roi_to_add.setStrokeWidth(2);
             curr_ovl.add(roi_to_add);
 
         }
 
-        inimg.setOverlay(curr_ovl);
-        inimg.updateAndDraw();
+        ImagePlus imout = inimg.duplicate();
+        imout.setOverlay(curr_ovl);
+        imout.show();
+        imout.updateAndDraw();
 
     }
 
