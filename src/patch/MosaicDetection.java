@@ -203,12 +203,12 @@ public class MosaicDetection implements PlugIn {
                 }
                 //*******extracting
                 System.out.println("extracting...");
-                lclPoints = extracting(lbl_clusters, lclPoints);
+                lclPoints = extracting(lbl_clusters, lclPoints); 
 
                 //*******
                 int count = 0;
                 for (int i = 0; i < lclPoints.size(); i++) {
-                    if (((int) lclPoints.get(i).getX() + D) < W && ((int) lclPoints.get(i).getY() + D) < H && ((int) lclPoints.get(i).getX() - D / 2) >= 0 && ((int) lclPoints.get(i).getY() - D / 2) >= 0) {
+                    if (((int) lclPoints.get(i).getX() + D/2) < W && ((int) lclPoints.get(i).getY() + D/2) < H && ((int) lclPoints.get(i).getX() - D / 2) >= 0 && ((int) lclPoints.get(i).getY() - D / 2) >= 0) {
                         int x = (int) lclPoints.get(i).getX() - D / 2;
                         int y = (int) lclPoints.get(i).getY() - D / 2;
 
@@ -228,7 +228,7 @@ public class MosaicDetection implements PlugIn {
                         ImagePlus impCopy = new ImagePlus("", ipCopy);
                         fs = new FileSaver(impCopy);
                         String filename = f.getAbsolutePath() + File.separator + inimg.getShortTitle()
-                                + ",X,Y,D,i," + IJ.d2s((int) lclPoints.get(i).getX(), 0) + "," + IJ.d2s((int) lclPoints.get(i).getY(), 0) + "," + IJ.d2s(D, 0) + "," + IJ.d2s(count, 0) + ".tif";
+                                + ",X,Y,D,i," + IJ.d2s((int) x, 0) + "," + IJ.d2s((int) y, 0) + "," + IJ.d2s(D, 0) + "," + IJ.d2s(count, 0) + ".tif";
 
                         fs.saveAsTiff(filename);
                         count++;
@@ -260,10 +260,6 @@ public class MosaicDetection implements PlugIn {
         return all_imag;
     }
 
-    /*
-     problem 1: group centroids with different radiuses (disks) to the same cluster if they overlap
-     this way each component maintains it's own radius (useful when clustering regions of different disk sizes)
-     */
     public int[] clustering(ArrayList<Point> disks, int D) //Point and Diameter  
     {
 
