@@ -5,7 +5,6 @@ import ij.ImagePlus;
 import ij.Prefs;
 import ij.gui.GenericDialog;
 import ij.gui.Overlay;
-import ij.gui.PointRoi;
 import ij.gui.Roi;
 import ij.io.FileSaver;
 import ij.io.OpenDialog;
@@ -17,16 +16,21 @@ import ij.text.TextWindow;
 import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Random;
+import java.util.Vector;
 
 /**
  * Created by miroslav on 26-2-15.
  *
- * read mosaic or mosaics and extract the patches to classify later (in other plugin in this moment).
- * 
- * it can extract the patches with the choice GRID or LOCAL_MAXIMA (to do: RANDOM)
- * 
- * it can work with one or more images ("work_batch") (all of them in the same folder)
- * 
+ * read mosaic or mosaics and extract the patches to classify later (in other
+ * plugin in this moment).
+ *
+ * it can extract the patches with the choice GRID or LOCAL_MAXIMA (to do:
+ * RANDOM)
+ *
+ * it can work with one or more images ("work_batch") (all of them in the same
+ * folder)
+ *
  *
  */
 public class MosaicDetection implements PlugIn {
@@ -109,7 +113,7 @@ public class MosaicDetection implements PlugIn {
             all_images.add(inimg);
         } else {
             all_images = getImagesFolder(images_path);
-            System.out.println("There are " + String.valueOf(all_images.size())+" images.");
+            System.out.println("There are " + String.valueOf(all_images.size()) + " images.");
         }
 
         for (ImagePlus all_image : all_images) {
@@ -129,7 +133,7 @@ public class MosaicDetection implements PlugIn {
             Overlay ov = new Overlay();
             FileSaver fs;
             // check the sampling model
-            if (ptch_distribution.equals("GRID")) { 
+            if (ptch_distribution.equals("GRID")) {
 
                 int margin = D / 2;
                 int step = (int) Math.floor(Math.sqrt(((W - D) * (H - D)) / N));
@@ -188,14 +192,30 @@ public class MosaicDetection implements PlugIn {
 //            for (Point lclPoint : lclPoints) {
 //                System.out.println("(x,y) " + lclPoint.getX() + "-" + lclPoint.getY());
 //            }
+                //*****clustering*****
+                System.out.println("clustering...");
+                int[] lbl_clusters = clustering(lclPoints, D);
+
+                // table with colors
+                Color[] c = new Color[lclPoints.size()];
+                for (int i = 0; i < lclPoints.size(); i++) {
+                    c[i] = getRandomColor();
+                }
+                //*******extracting
+                System.out.println("extracting...");
+                lclPoints = extracting(lbl_clusters, lclPoints);
+
+                //*******
                 int count = 0;
-                for (Point lclPoint : lclPoints) {
-                    if (((int) lclPoint.getX() + D) < W && ((int) lclPoint.getY() + D) < H && ((int) lclPoint.getX() - D / 2) >= 0 && ((int) lclPoint.getY() - D / 2) >= 0) {
-                        int x = (int) lclPoint.getX() - D / 2;
-                        int y = (int) lclPoint.getY() - D / 2;
+                for (int i = 0; i < lclPoints.size(); i++) {
+                    if (((int) lclPoints.get(i).getX() + D) < W && ((int) lclPoints.get(i).getY() + D) < H && ((int) lclPoints.get(i).getX() - D / 2) >= 0 && ((int) lclPoints.get(i).getY() - D / 2) >= 0) {
+                        int x = (int) lclPoints.get(i).getX() - D / 2;
+                        int y = (int) lclPoints.get(i).getY() - D / 2;
 
                         Rectangle rec = new Rectangle(x, y, D, D);
                         Roi rec_roi = new Roi(rec);
+                        rec_roi.setStrokeColor(c[lbl_clusters[i]]);
+                        rec_roi.setName(Integer.toString(lbl_clusters[i]));
                         ov.add(rec_roi);
 
                         inimg.setOverlay(ov);
@@ -208,7 +228,7 @@ public class MosaicDetection implements PlugIn {
                         ImagePlus impCopy = new ImagePlus("", ipCopy);
                         fs = new FileSaver(impCopy);
                         String filename = f.getAbsolutePath() + File.separator + inimg.getShortTitle()
-                                + ",X,Y,D,i," + IJ.d2s((int) lclPoint.getX(), 0) + "," + IJ.d2s((int) lclPoint.getY(), 0) + "," + IJ.d2s(D, 0) + "," + IJ.d2s(count, 0) + ".tif";
+                                + ",X,Y,D,i," + IJ.d2s((int) lclPoints.get(i).getX(), 0) + "," + IJ.d2s((int) lclPoints.get(i).getY(), 0) + "," + IJ.d2s(D, 0) + "," + IJ.d2s(count, 0) + ".tif";
 
                         fs.saveAsTiff(filename);
                         count++;
@@ -220,7 +240,7 @@ public class MosaicDetection implements PlugIn {
             FileSaver fsMosaic = new FileSaver(inimg);
             String nameMosaic = f.getAbsolutePath() + File.separator + inimg.getShortTitle() + "_patches.tif";
             fsMosaic.saveAsTiff(nameMosaic);
-            
+
         }
     }
 
@@ -239,4 +259,113 @@ public class MosaicDetection implements PlugIn {
         }
         return all_imag;
     }
+
+    /*
+     problem 1: group centroids with different radiuses (disks) to the same cluster if they overlap
+     this way each component maintains it's own radius (useful when clustering regions of different disk sizes)
+     */
+    public int[] clustering(ArrayList<Point> disks, int D) //Point and Diameter  
+    {
+
+        int[] labels = new int[disks.size()];
+        for (int i = 0; i < labels.length; i++) {
+            labels[i] = i;
+        }
+
+//        System.out.println("INIT. LABELS:");
+//        for (int i = 0; i < labels.length; i++) {
+//            System.out.print(labels[i] + " ");
+//        }
+//        System.out.println();
+
+        for (int i = 0; i < disks.size(); i++) {
+
+            // one versus the rest
+            for (int j = 0; j < disks.size(); j++) {
+
+                if (i != j) {
+
+                    double dst2 = Math.pow(disks.get(i).getX() - disks.get(j).getX(), 2) + Math.pow(disks.get(i).getY() - disks.get(j).getY(), 2);
+                    if (dst2 <= Math.pow(D, 2)) {  // they are neighbours
+
+                        if (labels[j] != labels[i]) {
+                            int currLabel = labels[j];
+                            int newLabel = labels[i];
+
+                            labels[j] = newLabel;
+
+                            //set all that also were currLabel to newLabel
+                            for (int k = 0; k < labels.length; k++) {
+                                if (labels[k] == currLabel) {
+                                    labels[k] = newLabel;
+                                }
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+//        System.out.println("OUT LABELS:");
+//        for (int ii = 0; ii < labels.length; ii++) {
+//            System.out.print(labels[ii] + " ");
+//        }
+//        System.out.println();
+
+        return labels; // cluster labels for each disc
+
+    }
+
+    /*
+     use output of clustering to give out the final cluster centroids
+     */
+    public static ArrayList<Point> extracting(int[] labels, ArrayList<Point> vals) { // int[] idxs,
+
+        boolean[] checked = new boolean[labels.length];
+        ArrayList<Point> out = new ArrayList<Point>();
+
+        for (int i = 0; i < labels.length; i++) {
+            if (!checked[i]) {
+
+                double centroidX = vals.get(i).getX();
+                double centroidY = vals.get(i).getY();
+                int count = 1;
+                checked[i] = true;
+
+                // check the rest
+                for (int j = i + 1; j < labels.length; j++) {
+                    if (!checked[j]) {
+                        if (labels[j] == labels[i]) {
+
+                            centroidX += vals.get(j).getX();
+                            centroidY += vals.get(j).getY();
+                            count++;
+                            checked[j] = true;
+
+                        }
+                    }
+                }
+                out.add(new Point((int) centroidX / count, (int) centroidY / count));
+
+            }
+        }
+
+        return out;
+
+    }
+
+    private static Color getRandomColor() {
+        Random random = new Random();
+        final float hue = random.nextFloat();
+        final float saturation = 0.9f;//1.0 for brilliant, 0.0 for dull
+        final float luminance = 1.0f; //1.0 for brighter, 0.0 for black
+        Color color = Color.getHSBColor(hue, saturation, luminance);
+        return color;
+    }
+
 }
