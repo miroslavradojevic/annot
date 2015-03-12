@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package patch;
 
 import ij.IJ;
@@ -21,6 +16,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+
+
 
 /**
  *
@@ -59,6 +56,8 @@ import java.util.ArrayList;
 public class MosaicClassify implements PlugIn {
 
     String command, fit_file_path, path, image_path, annot_file_path;
+    double areaP = 30; //minimum porcentage of overlapping area
+    double minArea = 0;
 
     @Override
     public void run(String string) {
@@ -75,6 +74,7 @@ public class MosaicClassify implements PlugIn {
         gdG.addStringField("destination_dir", path, 80);
         gdG.addStringField("mosaic_path", image_path, 80);
         gdG.addStringField("annotation", annot_file_path, 80);
+        gdG.addNumericField("minimum area of overlapping ", areaP, 0);
 
         command = gdG.getNextString();
         Prefs.set("annot.command", command);
@@ -86,6 +86,8 @@ public class MosaicClassify implements PlugIn {
         Prefs.set("annot.image_path", image_path);
         annot_file_path = new File(gdG.getNextString()).getAbsolutePath();
         Prefs.set("annot.annot_path", annot_file_path);
+        areaP=gdG.getNextNumber();
+        Prefs.set("annot.minArea", areaP);
 
         if (path.isEmpty() || fit_file_path.isEmpty() || annot_file_path.isEmpty() || image_path.isEmpty()) {
             return;
@@ -117,7 +119,7 @@ public class MosaicClassify implements PlugIn {
 //            path = "C:\\Users\\Gadea\\Desktop\\GadeaT\\test";
 //            fit_file_path = "C:\\Users\\Gadea\\Desktop\\GadeaT\\m01rd50.fit";
 //            image_path = "C:\\Users\\Gadea\\Desktop\\GadeaT\\m01.tif";
-//            annot_file_path ="";// "C:\\Users\\Gadea\\Desktop\\GadeaT\\ann_m01.log";
+//            annot_file_path = "C:\\Users\\Gadea\\Desktop\\GadeaT\\ann_m01.log";// "";// 
 //            command = "C:\\Users\\Gadea\\Aplicaciones\\wndchrm\\wndchrm classify -r#1 -d50";
 //            inimg = new ImagePlus(image_path);
             //----------
@@ -131,7 +133,7 @@ public class MosaicClassify implements PlugIn {
             System.out.println();
             System.out.println("***");
             System.out.println();
-            String output = executeCommandWind(cmdWind);
+            String output = executeCommand(cmdWind);
             System.out.println("DONE!");
 
 //        System.out.println(output);
@@ -149,7 +151,6 @@ public class MosaicClassify implements PlugIn {
                     xlocs.add(Integer.valueOf(comp[5]));
                     ylocs.add(Integer.valueOf(comp[6]));
                     points.add(new Point(Integer.valueOf(comp[5]), Integer.valueOf(comp[6])));
-//                    System.out.println(String.valueOf(Integer.valueOf(comp[5]) + " - " + String.valueOf(Integer.valueOf(comp[6]))));
                     n++;
                     if (readOutput[n].startsWith("astrocyte")) {
                         //read astrocyte scores
@@ -174,7 +175,6 @@ public class MosaicClassify implements PlugIn {
                         String[] outV = readOutput[n].trim().split(":");
                         String[] outValue = outV[1].trim().split(" ");
                         p_class.add(outValue[0]);
-//                        System.out.println(outValue[0]);
                         n++;
                     }
                 } else {
@@ -275,44 +275,13 @@ public class MosaicClassify implements PlugIn {
         } else {
             //*********** to evaluate**********
 
-            //to read annot-file
-            ArrayList<String> type_annot = new ArrayList<String>();  // mosaic name
-            ArrayList<Integer> xlocs_annot = new ArrayList<Integer>(); //
-            ArrayList<Integer> ylocs_annot = new ArrayList<Integer>();
-            ArrayList<Point> points_annot = new ArrayList<Point>();
-            //D is the same for all
+            int P = 0, total = 0, PClassify = 0, totalClassify = 0;
+            //P is the number of neurons in annot
+            //total is the number of patches in annot
+            //PClassify is the number of neurons classified
+            //totalClassify is the number of patches classified
 
-            int P = 0;
-            int total = 0;
-            int TP = 0;
-            int FN = 0;
-            int FP = 0;
-            int TN = 0;
-            int PClassify = 0;
-            int totalClassify = 0;
-            //to read annot file (.log)
-            try {
-                FileReader fr;
-                BufferedReader br;
-                String line;
-                fr = new FileReader(annot_file_path);
-                br = new BufferedReader(fr);
-
-                br.readLine(); //to read the comment
-                while ((line = br.readLine()) != null) {
-                    String[] aux = line.split("\t", 5);//[0] TYPE, [1] x, [2] y, [3] D, [4] D
-                    if (aux[0].contains("NEUR")) { //it only reads the neurons
-                        type_annot.add(aux[0]);
-                        xlocs_annot.add(Integer.parseInt(aux[1]));
-                        ylocs_annot.add(Integer.parseInt(aux[2]));
-                        points_annot.add(new Point(Integer.parseInt(aux[1]), Integer.parseInt(aux[2])));
-                        P++;
-                    }
-                    total++;
-                }
-            } catch (IOException ex) {
-                System.out.println("ERROR: " + ex.getMessage());
-            }
+            minArea = D * D * areaP / 100;
 
             //list with all rectangles from classification
             ArrayList<Rectangle> NeuronList = new ArrayList<Rectangle>();
@@ -332,84 +301,115 @@ public class MosaicClassify implements PlugIn {
                 totalClassify++;
             }
 
+            //to read annot-file
+            ArrayList<String> type_annot = new ArrayList<String>();  // mosaic name
+            ArrayList<Point> points_annot = new ArrayList<Point>();
+            //D is the same for all
+
+            //to read annot file (.log)
+            try {
+                FileReader fr;
+                BufferedReader br;
+                String line;
+                fr = new FileReader(annot_file_path);
+                br = new BufferedReader(fr);
+
+                br.readLine(); //to read the comment
+                while ((line = br.readLine()) != null) {
+                    String[] aux = line.split("\t", 5);//[0] TYPE, [1] x, [2] y, [3] D, [4] D
+                    if (aux[0].contains("NEUR")) { //it only reads the neurons
+                        type_annot.add(aux[0]);
+                        points_annot.add(new Point(Integer.parseInt(aux[1]), Integer.parseInt(aux[2])));
+                        P++;
+                    }
+                    total++;
+                }
+            } catch (IOException ex) {
+                System.out.println("ERROR: " + ex.getMessage());
+            }
             //only neurons from annot_.log
-            ArrayList<Rectangle> Neurons_annot = new ArrayList<Rectangle>();
+            Rectangle[] Neurons_annot = new Rectangle[points_annot.size()];
+
             for (int i = 0; i < points_annot.size(); i++) {
                 String actual_class = type_annot.get(i);
                 if (actual_class.contains("NEU")) {
-                    Neurons_annot.add(new Rectangle((int) points_annot.get(i).getX(), (int) points_annot.get(i).getY(), D, D));
+                    Neurons_annot[i] = new Rectangle((int) points_annot.get(i).getX(), (int) points_annot.get(i).getY(), D, D);
                 }
             }
+            
+            //to compare "neurons" (classification) with "neurons" (annot.log) 
+            Rectangle[] NClass = new Rectangle[NeuronList.size()];
+            Rectangle[] NAnnot = new Rectangle[NeuronList.size()];
+            Double[] NOver = new Double[NeuronList.size()];
 
-            //to compare "neurons" (classification) with "neurons" (annot.log) (to get TP and FP)
+            for (int i = 0; i < NeuronList.size(); i++) {
+                //maybe one neuron classified overloaps with 2 or more neurons from annot
+                ArrayList<Rectangle> auxNeurons = new ArrayList<Rectangle>();
+                ArrayList<Double> auxPorcOver = new ArrayList<Double>();
+                NClass[i] = NeuronList.get(i);
+                for (int j = 0; j < Neurons_annot.length; j++) {
+                    double over = overlap(NeuronList.get(i), Neurons_annot[j]);
+                    if (over > minArea) {
+                        auxNeurons.add(Neurons_annot[j]);
+                        auxPorcOver.add(over);
+                    }
+                }
+                if (!auxNeurons.isEmpty()) {
+                    double max = auxPorcOver.get(0);
+                    NOver[i] = max;
+                    NAnnot[i] = auxNeurons.get(0);
+                    for (int j = 1; j < auxNeurons.size(); j++) {
+                        if (max < auxPorcOver.get(j)) {
+                            max = auxPorcOver.get(j);
+                            NOver[i] = max;
+                            NAnnot[i] = auxNeurons.get(j);
+                        }
+                    }
+                } else {
+                    NOver[i] = -1d;
+                    NAnnot[i] = null;
+                }
+
+            }
+            //here more than one neuron_annot may be repeated (different NClass have the same NAnnot)
             ArrayList<Rectangle> TP_neurons = new ArrayList<Rectangle>();
             ArrayList<Rectangle> FP_neurons = new ArrayList<Rectangle>();
-            ArrayList<Rectangle> FN_rest = new ArrayList<Rectangle>();
-            ArrayList<Rectangle> TN_rest = new ArrayList<Rectangle>();
-            boolean overlap = false;
-            for (int i = 0; i < NeuronList.size(); i++) {
-                for (int j = 0; j < Neurons_annot.size(); j++) {
-                    double over = overlap(NeuronList.get(i), Neurons_annot.get(j));
-                    if (over > 0) {
-                        overlap = true;
-                        break;
+            ArrayList<Rectangle> TP_annot_neurons = new ArrayList<Rectangle>();
+            for (int i = 0; i < NAnnot.length; i++) {
+                for (int j = 0; j < NAnnot.length; j++) {
+                    if ((j != i) && (NAnnot[i] != null) && NAnnot[j] != null && (NAnnot[i] == NAnnot[j])) {
+                        if (NOver[i] <= NOver[j]) {
+                            NOver[i] = -1d;
+                            NAnnot[i] = null;
+                        } else {
+                            NOver[j] = -1d;
+                            NAnnot[j] = null;
+                        }
                     }
                 }
-                if (overlap) {
-                    TP++;
-                    TP_neurons.add(NeuronList.get(i));
-                    overlap = false;
+            }
+            for (int i = 0; i < NClass.length; i++) {
+                if (NOver[i] != -1d && NAnnot[i] != null) {
+                    TP_neurons.add(NClass[i]);
+                    TP_annot_neurons.add(NAnnot[i]);
                 } else {
-                    FP++;
-                    FP_neurons.add(NeuronList.get(i));
+                    FP_neurons.add(NClass[i]);
                 }
             }
-            //to compare the rest of the patches (to get FN and TN (to check))
-            overlap = false;
-            for (int i = 0; i < BackList.size(); i++) {
-                for (int j = 0; j < Neurons_annot.size(); j++) {
-                    double over = overlap(BackList.get(i), Neurons_annot.get(j));
-                    if (over > 0) {
-                        overlap = true;
-                        break;
-                    }
-                }
-                if (overlap) {
-                    FN++;
-                    overlap = false;
-                    FN_rest.add(BackList.get(i));
-                } else {
-                    TN++;
-                    TN_rest.add(BackList.get(i));
-                }
-            }
-            overlap = false;
-            for (int i = 0; i < AstrocyteList.size(); i++) {
-                for (int j = 0; j < Neurons_annot.size(); j++) {
-                    double over = overlap(AstrocyteList.get(i), Neurons_annot.get(j));
-                    if (over > 0) {
-                        overlap = true;
-                        break;
-                    }
-                }
-                if (overlap) {
-                    FN++;
-                    overlap = false;
-                    FN_rest.add(AstrocyteList.get(i));
-                } else {
-                    TN++;
-                    TN_rest.add(AstrocyteList.get(i));
-                }
-            }
+            int TP, FN, FP;
+            TP = TP_neurons.size();
+            FP = FP_neurons.size();
+
+            //FN is the number of neurons in annot minus the number of neurons found.
+            FN = P - TP;
 
             System.out.println("total patches in annot: " + total);
             System.out.println("total patches in classification: " + totalClassify);
-            System.out.println("P in annot: " + P);
-            System.out.println("P' in classification: " + PClassify);
-            System.out.println("TP: " + TP+ " (in red)");
-            System.out.println("FN: " + FN+ " (in yellow)");
-            System.out.println("FP: " + FP+ " (in blue)");
-            System.out.println("TN: " + TN+ " (in green)");
+            System.out.println("P (Neurons) in annot: " + P);
+            System.out.println("P' (Neurons) in classification: " + PClassify);
+            System.out.println("TP: " + TP + " (in red)");
+            System.out.println("FN: " + FN + " (in yellow)");
+            System.out.println("FP: " + FP + " (in blue)");
 
             //to visualizate the results
             Overlay curr_ovl = new Overlay();
@@ -427,18 +427,10 @@ public class MosaicClassify implements PlugIn {
                 roi_to_add.setStrokeColor(new Color(0, 0, 1, 1));
                 curr_ovl.add(roi_to_add);
             }
-            for (Rectangle FN_rest1 : FN_rest) {
-                //in blue the patches have been classified like neurons but they are not
-                Roi roi_to_add = new Roi(FN_rest1);
-                roi_to_add.setFillColor(new Color(0, 1, 1, 0.2f));
-                roi_to_add.setStrokeColor(new Color(0, 1, 1, 1));
-                curr_ovl.add(roi_to_add);
-            }
-            for (Rectangle TN_rest1 : TN_rest) {
-                //in blue the patches have been classified like neurons but they are not
-                Roi roi_to_add = new Roi(TN_rest1);
-                roi_to_add.setFillColor(new Color(0, 1, 0, 0.2f));
-                roi_to_add.setStrokeColor(new Color(0, 1, 0, 1));
+            for (Rectangle TP_original : TP_annot_neurons) {
+                //it paints the original patch in case of neuron
+                Roi roi_to_add = new Roi(TP_original);
+                roi_to_add.setStrokeColor(Color.WHITE);
                 curr_ovl.add(roi_to_add);
             }
 
@@ -483,30 +475,6 @@ public class MosaicClassify implements PlugIn {
         yDiff = (yDiff < 0) ? 0 : yDiff;
 
         return xDiff * yDiff;
-    }
-
-    private String executeCommandWind(String command) {
-
-        StringBuffer output = new StringBuffer();
-
-        Process p;
-        try {
-            p = Runtime.getRuntime().exec(command);
-            p.waitFor();
-            BufferedReader reader
-                    = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-            String line = "";
-            while ((line = reader.readLine()) != null) {
-                output.append(line + "\n");
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return output.toString();
-
     }
 
     private String executeCommand(String command) {
@@ -572,5 +540,4 @@ public class MosaicClassify implements PlugIn {
         }
         return D;
     }
-
 }
