@@ -39,7 +39,6 @@ public class Read_tsv implements PlugIn {
     int D = 500; //dimension of the square
     double minArea = 0; //minimum area for overlapping
     int areaP = 20; //min porcentage for overlapping 
-    int numLine = 358; //there are two mosaics (I don't know why) but their tsv-files are different that the rest of mosaics. For mosaic 03 and 07, the results are in the 326 line in tsv-file
     String output_path; //path to save the results
 
     @Override
@@ -52,7 +51,6 @@ public class Read_tsv implements PlugIn {
         output_path = Prefs.get("readTSV.output_path", System.getProperty("user.home"));
         areaP = (int) Prefs.get("readTSV.porcArea", 20);
         D = (int) Prefs.get("readTSV.D", 500);
-        numLine = (int) Prefs.get("readTSV.numLine", 358);
         final String[] types = new String[]{".zip", ".log"};
 
         GenericDialog gdG = new GenericDialog("MosaicClassify");
@@ -63,7 +61,6 @@ public class Read_tsv implements PlugIn {
         gdG.addStringField("annotation", output_path, 80);
         gdG.addNumericField("%_overlapped", areaP, 0);
         gdG.addNumericField("size_patch", D, 0);
-        gdG.addNumericField("num_Line (326 for m03&m07, 358 for the rest)", numLine, 0);
 
         gdG.showDialog();
         if (gdG.wasCanceled()) {
@@ -83,8 +80,6 @@ public class Read_tsv implements PlugIn {
         Prefs.get("readTSV.porcArea", areaP);
         D = (int) gdG.getNextNumber();
         Prefs.get("readTSV.D", D);
-        numLine = (int) gdG.getNextNumber();
-        Prefs.get("readTSV.numLine", numLine);
 
         ImagePlus inimg = new ImagePlus(image_path);
 
@@ -105,20 +100,18 @@ public class Read_tsv implements PlugIn {
             fr = new FileReader(pathFile);
 
             br = new BufferedReader(fr);
-            for (int i = 0; i < numLine; i++) {//326 to m03 and m07 (I don't know why) //358 for the rest of mosaics
-                br.readLine();
+            while(!br.readLine().contains("Image No.")){
+                
             }
             String line = br.readLine();
             if (line.contains("<tr><td>1</td>")) {
                 while ((line != null)) {
                     String[] aux = line.trim().split("<td>");
                     for (int j = 1; j < aux.length; j++) {
-                        if (aux[j].contains("neur")) {
-                            classPredict.add("neuron");
-                        } else if (aux[j].contains("astro")) {
-                            classPredict.add("astrocyte");
-                        } else if (aux[j].contains("back")) {
-                            classPredict.add("background");
+                        if (aux[j].equals("Neuron</td>")) {
+                            classPredict.add("Neuron");
+                        } else if (aux[j].equals("noNeuron</td>")) {
+                            classPredict.add("noNeuron");
                         } else if (aux[j].contains("A HREF")) {
                             String[] aux2 = aux[j].trim().split("\"");
                             File img = new File(aux2[1]);
@@ -140,7 +133,7 @@ public class Read_tsv implements PlugIn {
         int P = 0, total = 0, PClassify = 0, totalClassify;
         //save the patches which are neurons in the classification
         for (int i = 0; i < patches.size(); i++) {
-            if (classPredict.get(i).contains("neur")) {
+            if (classPredict.get(i).equals("Neuron")) {
                 NeuronList.add(new Rectangle((int) patches.get(i).getX(), (int) patches.get(i).getY(), D, D));
                 PClassify++;
             }
@@ -160,7 +153,7 @@ public class Read_tsv implements PlugIn {
                 br.readLine(); //to read the comment
                 while ((line = br.readLine()) != null) {
                     String[] aux = line.split("\t", 5);//[0] TYPE, [1] x, [2] y, [3] D, [4] D
-                    if (aux[0].contains("NEUR")) { //it only reads the neurons
+                    if (aux[0].equals("Neuron")) { //it only reads the neurons
                         type_annot.add(aux[0]);
                         points_annot.add(new Point(Integer.parseInt(aux[1]), Integer.parseInt(aux[2])));
                         P++;
@@ -175,7 +168,7 @@ public class Read_tsv implements PlugIn {
 
             for (int i = 0; i < points_annot.size(); i++) {
                 String actual_class = type_annot.get(i);
-                if (actual_class.contains("NEU")) {
+                if (actual_class.equals("Neuron")) {
                     Neurons_annot[i] = new Rectangle((int) points_annot.get(i).getX(), (int) points_annot.get(i).getY(), D, D);
                 }
             }
