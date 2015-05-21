@@ -168,7 +168,7 @@ public class Sift_model implements PlugIn {
 
         weka.core.SerializationHelper.write(output_path + "\\" + expName + "_model_NB" + ".model", cModel);
 
-        IJ.log("the model has been saved in " + output_path + "\\model_NB" + ".model");
+        IJ.log("the model has been saved in " + output_path + "\\" + expName + "_model_NB" + ".model");
     }
 
     /**
@@ -193,9 +193,7 @@ public class Sift_model implements PlugIn {
         skm.setSeed(42);//this seed is by default
         skm.buildClusterer(data_without_class);
         /*
-         to save a model-file. I tried with other three ways more for saving the files, 
-         but I didn't get that later, the file is opened with Weka interfaz, but the file looks like ok 
-         and from the code works right.
+         to save a model-file. The file is opened with Weka 3.7 (interface)
          */
         weka.core.SerializationHelper.write(output_path + "\\" + expName + "_model_SKM" + ".model", skm);
 
